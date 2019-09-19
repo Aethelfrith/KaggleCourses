@@ -8,5 +8,6 @@ housing_filename = "./Data/melb_data.csv"
 housing_data = pd.read_csv(housing_filename)
 
 #Inspect tha data
+print(housing_data)
 print(housing_data.head())
 print(housing_data.describe())
