@@ -137,4 +137,10 @@ register_matplotlib_converters()
 #sns.swarmplot(x = candy_data["chocolate"],y = candy_data["winpercent"])
 #plt.show()
 
-#PART &
+#PART 6: Distributions
+iris_filepath = "./Data/iris.csv"
+iris_data = pd.read_csv(iris_filepath, col_index = "Id")
+
+#Show data
+print(iris_data.head())
+
