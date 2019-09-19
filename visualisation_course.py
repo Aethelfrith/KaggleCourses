@@ -103,4 +103,38 @@ register_matplotlib_converters()
 #plt.show()
 
 #PART 5 Scatterplots
+#insurance_filepath = "./Data/insurance.csv"
+#insurance_data = pd.read_csv(insurance_filepath)
 
+##Inspect the data
+#print(insurance_data.head())
+#print(insurance_data.describe())
+
+##Scatterplot
+##sns.scatterplot(x=insurance_data["bmi"],y = insurance_data['charges'],hue=insurance_data["smoker"])
+##plt.show()
+
+##sns.lmplot(x="bmi",y="charges",hue = "smoker",data=insurance_data)
+##plt.show()
+
+#sns.swarmplot(x=insurance_data["smoker"],y=insurance_data["charges"])
+#plt.show()
+
+##PART 5 Exercise
+#candy_filepath = "./Data/candy.csv"
+#candy_data = pd.read_csv(candy_filepath)
+
+##Inspect
+#print(candy_data.head())
+
+##Inspect scatterplot of data
+##sns.scatterplot(x=candy_data["sugarpercent"],y = candy_data["winpercent"], hue = candy_data["chocolate"])
+##plt.show()
+
+##sns.lmplot(x= "sugarpercent",y = "winpercent",hue = "chocolate",data = candy_data)
+##plt.show()
+
+#sns.swarmplot(x = candy_data["chocolate"],y = candy_data["winpercent"])
+#plt.show()
+
+#PART &
