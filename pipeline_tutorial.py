@@ -58,3 +58,13 @@ model = RandomForestRegressor(n_estimators = 100, random_state = random_seed)
 
 #Build pipeline
 my_pipeline = Pipeline(steps=[('preprocessor',preprocessor),('model',model)])
+
+#Preprocess and fit model simultaneously
+my_pipeline.fit(X_train, y_train)
+
+#Use the pipeline to make predictions from validation data
+preds = my_pipeline.predict(X_valid)
+
+#Evaluate the model
+score = mean_absolute_error(y_valid, preds)
+print('MAE: ',score)
