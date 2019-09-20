@@ -9,25 +9,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.base import BaseEstimator, TransformerMixin
-
-
-#From https://stackoverflow.com/questions/48743032/get-intermediate-data-state-in-scikit-learn-pipeline
-#Define a class such that data can be accessed at an intermediate step in the pipeline
-#Inherit from BaseEstimator and TransformerMixin to comply with the requirements of a step in the pipeline
-class StateGetter(BaseEstimator, TransformerMixin):
-	
-	def transform(self, X):
-		#Make the shape accessible
-		self.X = X
-		return X
-	
-	def fit(self, X, y = None, **fit_params):
-		return self
 		
 #Make a function which extracts the column names (in order??) of the preprocessed data
-
 def get_cols_from_ct_pipeline(pipeline,preprocessor_name = 'preprocessor'):
 	#Get all columnn names from the column transformer part of a pipeline
 	#Check that the pipeline indeed has a preprocessor step of type ColumnTransformer
@@ -35,9 +21,11 @@ def get_cols_from_ct_pipeline(pipeline,preprocessor_name = 'preprocessor'):
 		throw: TypeError("Type must be ColumnTransformer")
 	
 	transformers = pipeline.named_steps["preprocessor"].transformers
-	cols = []
+	all_columns = []
 	#all_columns = transformers[0][2] + transformers[1][2] 
-	all_columns = [cols + (transformers[i][2]) for i in range(len(transformers))] 
+	#all_columns = [cols + transformers[i][2] for i in range(len(transformers))]
+	for transformer in transformers:
+		all_columns += transformer[2]
 	return all_columns
 	
 
@@ -91,8 +79,9 @@ preprocessor = ColumnTransformer(transformers = [
 ])
 
 #Define model
-n_estimators = 10
-model = RandomForestRegressor(n_estimators = n_estimators,random_state = rnd_seed)
+#n_estimators = 10
+#model = RandomForestRegressor(n_estimators = n_estimators,random_state = rnd_seed)
+model = DecisionTreeRegressor(random_state = rnd_seed)
 
 #Bundle preprocessing and modelling
 pipel = Pipeline(steps = [('preprocessor',preprocessor),('stategetter',StateGetter()), ('model',model)])
@@ -111,10 +100,11 @@ feature_importances = pipel.named_steps.model.feature_importances_
 
 feature_names = get_cols_from_ct_pipeline(pipel)
 
-print(feature_names)
+print("Number of feature names: ",len(feature_names))
+print("Number of feature importances: ",len(feature_importances))
 
 #Make a Series with the feature names
-#feature_importances_series = pd.Series(data = feature_importances, index = X_train.columns.values)
+feature_importances_series = pd.Series(data = feature_importances, index = feature_names)
 
 #print('X_train_columns: ',X_train.columns.values)
 
