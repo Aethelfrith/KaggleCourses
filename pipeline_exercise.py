@@ -11,21 +11,28 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import clone
 		
 #Make a function which extracts the column names (in order??) of the preprocessed data
-def get_cols_from_ct_pipeline(pipeline,preprocessor_name = 'preprocessor'):
-	#Get all columnn names from the column transformer part of a pipeline
-	#Check that the pipeline indeed has a preprocessor step of type ColumnTransformer
-	if not   isinstance(pipeline.named_steps[preprocessor_name],ColumnTransformer):
-		throw: TypeError("Type must be ColumnTransformer")
+def get_cols_from_num_and_cat(X_train_full, num_cols, cat_cols, cat_transformer, onehot_name = 'onehot'):
+	#Assume that there only onehot encoding changes the number of columns. Assume that the numerical columns are neither permuted nor changed on number.
 	
-	transformers = pipeline.named_steps["preprocessor"].transformers
-	all_columns = []
-	#all_columns = transformers[0][2] + transformers[1][2] 
-	#all_columns = [cols + transformers[i][2] for i in range(len(transformers))]
-	for transformer in transformers:
-		all_columns += transformer[2]
+	#Warning: This pythonic way of checking emptiness is borken by numpy arrays
+	if not num_cols:
+		num_columns = []
+	else:
+		num_dummy_training = X_train_full[num_cols].copy()
+		num_columns = num_dummy_training.columns.values
+	if not cat_cols:
+		 cat_columns_onehot = []
+	else:
+		cat_dummy_training = X_train_full[cat_cols].copy()
+		categorical_transformer.fit(cat_dummy_training)
+		cat_columns_onehot = cat_transformer.named_steps['onehot'].get_feature_names(cat_cols)
+	
+
+	#The order of concatenation should be important! order should agree with order that of operations
+	all_columns = list(num_columns) + list(cat_columns_onehot)
 	return all_columns
 	
 
@@ -48,13 +55,13 @@ X_full.drop(['SalePrice'], axis=1, inplace=True)
 X_train_full, X_valid_full, y_train, y_valid = train_test_split(X_full, y, train_size = 0.8, random_state = rnd_seed)
 
 #Select categorical variables with small cardinality for onehot encoding, to avoid curse of dimensionality
-max_cardinality_for_onehot = 10
-categorical_cols = [colname for colname in X_train_full.columns if (X_train_full[colname].dtype == "object") and  (X_train_full[colname].nunique() < max_cardinality_for_onehot)]
+max_cardinality_for_onehot = 1
+categorical_cols = [colname for colname in X_train_full.columns if (X_train_full[colname].dtype == "object") and (X_train_full[colname].nunique() < max_cardinality_for_onehot)]
 
 #Select numerical columns
 numerical_cols = list(X_train_full.select_dtypes(include = ['number']).columns.values)
 
-#Only keep numerical and categorical columns
+##Only keep numerical and categorical columns
 keep_cols = categorical_cols + numerical_cols
 X_train = X_train_full[keep_cols].copy()
 X_valid = X_valid_full[keep_cols].copy()
@@ -79,12 +86,12 @@ preprocessor = ColumnTransformer(transformers = [
 ])
 
 #Define model
-#n_estimators = 10
-#model = RandomForestRegressor(n_estimators = n_estimators,random_state = rnd_seed)
-model = DecisionTreeRegressor(random_state = rnd_seed)
+n_estimators = 10
+model = RandomForestRegressor(n_estimators = n_estimators,random_state = rnd_seed)
+#model = DecisionTreeRegressor(random_state = rnd_seed)
 
 #Bundle preprocessing and modelling
-pipel = Pipeline(steps = [('preprocessor',preprocessor),('stategetter',StateGetter()), ('model',model)])
+pipel = Pipeline(steps = [('preprocessor',preprocessor), ('model',model)])
 
 #Make predictions with the pipeline
 pipel.fit(X_train,y_train)
@@ -98,21 +105,22 @@ print("MAE: ",mean_absolute_error(y_valid,preds))
 feature_importances = pipel.named_steps.model.feature_importances_
 #feature_names = pipel.named_steps["preprocessor"].transformers[0][2]
 
-feature_names = get_cols_from_ct_pipeline(pipel)
+
+#To get the feature names, apply the onehotencoder on the original categorical data once more. Not pretty, but apparently the only way atm
+print(categorical_cols)
+feature_names = get_cols_from_num_and_cat(X_train_full, numerical_cols, categorical_cols, categorical_transformer)
 
 print("Number of feature names: ",len(feature_names))
 print("Number of feature importances: ",len(feature_importances))
 
+
 #Make a Series with the feature names
 feature_importances_series = pd.Series(data = feature_importances, index = feature_names)
 
-#print('X_train_columns: ',X_train.columns.values)
-
-#print('Feature importances: ', feature_importances)
 #print(feature_importances_series)
-#Visualise the feature impportances in a barplot
 
-#plt.figure(figsize = (10,7))
-#sns.distplot()
-#plt.show()
+#Visualise the feature impportances in a barplo
+plt.figure(figsize = (10,7))
+sns.distplot(feature_importances_series)
+plt.show()
 
